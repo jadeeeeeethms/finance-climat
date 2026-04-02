@@ -1,113 +1,124 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 13 13:15:00 2026
+
+@author: jadet
+"""
+
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
-st.set_page_config(page_title="Physical Risk", layout="wide")
+st.set_page_config(page_title="Climate Physical Risk Dashboard", layout="wide")
 
-st.title("Physical Risk Indicator")
+st.title("Climate Physical Risk Dashboard : Flood")
 
 # =========================
 # LOAD DATA
 # =========================
-summary = pd.read_csv("data/physical_risk/dashboard_summary.csv", sep=";")
+assets = pd.read_csv("data/physical_risk/dashboard_assets.csv", sep=";")
 country = pd.read_csv("data/physical_risk/dashboard_country_indicator.csv", sep=";")
 sector = pd.read_csv("data/physical_risk/dashboard_sector_indicator.csv", sep=";")
-assets = pd.read_csv("data/physical_risk/dashboard_assets.csv", sep=";")
-interpretation = pd.read_csv("data/physical_risk/dashboard_interpretation.csv", sep=";")
+summary_raw = pd.read_csv("data/physical_risk/dashboard_summary.csv", sep=";")
 
-summary_dict = dict(zip(summary["metric"], summary["value"]))
-interp_dict = dict(zip(interpretation["item"], interpretation["value"]))
+summary = summary_raw.set_index("metric")["value"]
 
-# =========================
-# HEADER
-# =========================
-st.subheader("Definition")
-st.write(summary_dict.get("indicator_definition", "No definition available."))
-
-st.subheader("Interpretation")
-st.info(summary_dict.get("interpretation", "No interpretation available."))
-
-st.subheader("Investment rule")
-st.success(summary_dict.get("investment_rule", "No rule available."))
+total_value = float(summary["total_value"])
+total_risk = float(summary["total_risk"])
+indicator = float(summary["portfolio_indicator"])
 
 # =========================
-# MAIN METRICS
+# PORTFOLIO SUMMARY
 # =========================
+st.header("Portfolio Summary")
+
 col1, col2, col3 = st.columns(3)
 
-with col1:
-    try:
-        st.metric("Portfolio indicator", round(float(summary_dict["portfolio_indicator"]), 6))
-    except:
-        st.metric("Portfolio indicator", summary_dict.get("portfolio_indicator", "N/A"))
-
-with col2:
-    try:
-        st.metric("Total value", round(float(summary_dict["total_value"]), 2))
-    except:
-        st.metric("Total value", summary_dict.get("total_value", "N/A"))
-
-with col3:
-    try:
-        st.metric("Total risk", round(float(summary_dict["total_risk"]), 2))
-    except:
-        st.metric("Total risk", summary_dict.get("total_risk", "N/A"))
+col1.metric("Total Value", f"{total_value:,.0f}")
+col2.metric("Total Risk", f"{total_risk:,.0f}")
+col3.metric("Portfolio Indicator", f"{indicator:.3f}")
 
 # =========================
-# QUICK DECISION
+# SIMPLE INTERPRETATION
 # =========================
-st.subheader("Quick decision help")
+st.header("Interpretation for a beginner investor")
 
-col1, col2 = st.columns(2)
-
-with col1:
-    st.write("### Best choices to prioritize")
-    st.write("**Country:**", summary_dict.get("best_country_to_prioritize", "N/A"))
-    st.write("**Sector:**", summary_dict.get("best_sector_to_prioritize", "N/A"))
-    st.write("**Asset:**", summary_dict.get("best_asset_to_prioritize", "N/A"))
-
-with col2:
-    st.write("### Highest-risk choices to review")
-    st.write("**Country:**", summary_dict.get("worst_country_to_avoid", "N/A"))
-    st.write("**Sector:**", summary_dict.get("worst_sector_to_avoid", "N/A"))
-    st.write("**Asset:**", summary_dict.get("worst_asset_to_avoid", "N/A"))
+st.info("""
+Lower values mean lower physical climate risk.
+If you want a simple rule:
+- prioritize countries, sectors and assets with the lowest indicator values,
+- review carefully those with the highest values.
+""")
 
 # =========================
-# COUNTRY CHART
+# ASSETS MAP
 # =========================
-st.subheader("Risk by country")
-st.caption("This chart compares countries. Lower values are better.")
+st.header("Assets Map")
 
-if "country" in country.columns and "indicator" in country.columns:
-    country_chart = country.sort_values("indicator", ascending=True).set_index("country")
-    st.bar_chart(country_chart["indicator"])
+required_map_cols = {"latitude", "longitude", "physical_risk", "hazard", "name"}
+if required_map_cols.issubset(assets.columns):
+    fig_map = px.scatter_mapbox(
+        assets,
+        lat="latitude",
+        lon="longitude",
+        size="physical_risk",
+        color="hazard",
+        hover_name="name",
+        zoom=1,
+        height=600
+    )
+    fig_map.update_layout(mapbox_style="carto-positron")
+    st.plotly_chart(fig_map, use_container_width=True)
+else:
+    st.warning("Assets file is missing one of these columns: latitude, longitude, physical_risk, hazard, name")
+
+# =========================
+# RISK BY COUNTRY
+# =========================
+st.header("Risk by Country")
+st.caption("Higher bar = higher average physical climate risk")
+
+if {"country", "indicator"}.issubset(country.columns):
+    fig_country = px.bar(
+        country.sort_values("indicator", ascending=False).head(20),
+        x="country",
+        y="indicator"
+    )
+    st.plotly_chart(fig_country, use_container_width=True)
 else:
     st.warning("Country file must contain columns: country, indicator")
 
 # =========================
-# SECTOR CHART
+# RISK BY SECTOR
 # =========================
-st.subheader("Risk by sector")
-st.caption("This chart compares sectors. Lower values are better.")
+st.header("Risk by Sector")
+st.caption("Higher bar = higher average physical climate risk")
 
-if "sector" in sector.columns and "indicator" in sector.columns:
-    sector_chart = sector.sort_values("indicator", ascending=True).set_index("sector")
-    st.bar_chart(sector_chart["indicator"])
+if {"sector", "indicator"}.issubset(sector.columns):
+    fig_sector = px.bar(
+        sector.sort_values("indicator", ascending=False),
+        x="sector",
+        y="indicator"
+    )
+    st.plotly_chart(fig_sector, use_container_width=True)
 else:
     st.warning("Sector file must contain columns: sector, indicator")
 
 # =========================
 # ASSETS TABLE
 # =========================
-st.subheader("Assets")
-st.caption("This table helps identify the safest and riskiest assets.")
-
-st.dataframe(assets, use_container_width=True)
+st.header("Assets Data")
+st.dataframe(assets.head(1000), use_container_width=True)
 
 # =========================
-# EDUCATIONAL GUIDE
+# DEBUG SECTION
 # =========================
-st.subheader("How to read this dashboard")
-
-for key, value in interp_dict.items():
-    nice_key = key.replace("_", " ").capitalize()
-    st.write(f"**{nice_key}**: {value}")
+with st.expander("Debug - loaded files preview"):
+    st.write("Summary")
+    st.dataframe(summary_raw)
+    st.write("Country")
+    st.dataframe(country.head())
+    st.write("Sector")
+    st.dataframe(sector.head())
+    st.write("Assets")
+    st.dataframe(assets.head())
