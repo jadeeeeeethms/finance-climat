@@ -1,2 +1,13 @@
 metric;value
-test;0
+portfolio_indicator;0.43518417807241544
+total_value;5706975447257
+total_risk;2483585419293.993
+indicator_definition;Physical climate risk based on flood hazard and asset value
+interpretation;Lower values are better because they mean lower exposure to climate physical risk
+investment_rule;"Invest first in the lowest indicator values; avoid or review the highest ones"
+best_country_to_prioritize;Latvia
+worst_country_to_avoid;Democratic Republic of the Congo
+best_sector_to_prioritize;Wave and Tidal
+worst_sector_to_avoid;Hydro
+best_asset_to_prioritize;Kajaki Hydroelectric Power Plant Afghanistan
+worst_asset_to_avoid;Ust Illminsk (HPP)
