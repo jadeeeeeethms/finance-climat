@@ -13,79 +13,179 @@ st.set_page_config(
 # =========================================================
 st.markdown("""
 <style>
-
-/* === BASE THEME (compatible dark & light) === */
-
+/* ===== Adaptive design tokens ===== */
 :root {
-    --bg-color: var(--background-color);
-    --text-color: var(--text-color);
-    --card-bg: rgba(255,255,255,0.05);
-    --border-color: rgba(255,255,255,0.1);
+    --card-bg: rgba(127, 127, 127, 0.08);
+    --border-color: rgba(127, 127, 127, 0.18);
+    --hero-bg-1: rgba(30, 64, 175, 0.10);
+    --hero-bg-2: rgba(16, 185, 129, 0.10);
+    --muted-text: rgba(120, 120, 120, 0.95);
+    --badge-bg: rgba(59, 130, 246, 0.12);
+    --badge-border: rgba(59, 130, 246, 0.28);
+    --good-bg: rgba(34, 197, 94, 0.14);
+    --good-color: #15803d;
+    --mid-bg: rgba(245, 158, 11, 0.16);
+    --mid-color: #b45309;
+    --bad-bg: rgba(239, 68, 68, 0.14);
+    --bad-color: #b91c1c;
 }
 
-/* Containers */
-[data-testid="stAppViewContainer"] {
-    background-color: var(--bg-color);
-}
-
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background-color: var(--secondary-background-color);
-}
-
-/* Texte */
-html, body, [class*="css"] {
-    color: var(--text-color) !important;
-}
-
-/* === CARDS (important pour ton rendu pro) === */
+/* ===== Layout ===== */
 .block-container {
-    padding-top: 2rem;
+    padding-top: 1.2rem;
+    padding-bottom: 2rem;
+    max-width: 1280px;
 }
 
-/* KPI / sections */
-.section-card {
-    background-color: var(--card-bg);
-    padding: 20px;
-    border-radius: 12px;
+[data-testid="stSidebar"] {
+    border-right: 1px solid var(--border-color);
+}
+
+html, body, [class*="css"] {
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* ===== Hero ===== */
+.hero {
+    padding: 30px 34px;
+    border-radius: 22px;
+    margin-bottom: 22px;
+    background: linear-gradient(135deg, var(--hero-bg-1), var(--hero-bg-2));
     border: 1px solid var(--border-color);
-    margin-bottom: 20px;
 }
 
-/* Titles */
-h1, h2, h3 {
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 0.4rem;
+}
+
+.hero-subtitle {
+    font-size: 1.08rem;
+    opacity: 0.88;
+    margin-bottom: 1rem;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 0.38rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.84rem;
     font-weight: 600;
+    background: var(--badge-bg);
+    border: 1px solid var(--badge-border);
+    margin-right: 8px;
+    margin-top: 4px;
 }
 
-/* Alerts */
+/* ===== Cards ===== */
+.info-card {
+    padding: 18px 20px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    margin-bottom: 16px;
+}
+
+.metric-card {
+    padding: 20px 20px 16px 20px;
+    border-radius: 18px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    min-height: 200px;
+}
+
+.section-card {
+    padding: 22px;
+    border-radius: 18px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    margin-bottom: 16px;
+    height: 100%;
+}
+
+/* ===== Typography ===== */
+.section-title {
+    font-size: 2rem;
+    font-weight: 780;
+    margin-top: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.small-label {
+    font-size: 0.92rem;
+    opacity: 0.76;
+    margin-bottom: 0.28rem;
+}
+
+.kpi-title {
+    font-size: 0.95rem;
+    opacity: 0.78;
+    margin-bottom: 0.3rem;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 750;
+    line-height: 1.1;
+    margin-bottom: 0.55rem;
+}
+
+.small-muted {
+    font-size: 0.96rem;
+    opacity: 0.82;
+}
+
+/* ===== Status badges ===== */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.72rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+.status-good {
+    background: var(--good-bg);
+    color: var(--good-color);
+}
+
+.status-mid {
+    background: var(--mid-bg);
+    color: var(--mid-color);
+}
+
+.status-bad {
+    background: var(--bad-bg);
+    color: var(--bad-color);
+}
+
+/* ===== Components ===== */
 [data-testid="stAlert"] {
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
-/* Tables */
-[data-testid="stDataFrame"] {
-    border-radius: 10px;
-}
-
-/* Buttons */
-button {
-    border-radius: 8px !important;
-}
-
-/* Upload box */
 [data-testid="stFileUploader"] {
-    border-radius: 10px;
-    border: 1px dashed var(--border-color);
-    padding: 10px;
+    border-radius: 14px;
+    padding: 8px;
 }
 
-/* Fix contrast map/plot */
+[data-testid="stDataFrame"] {
+    border-radius: 12px;
+}
+
+button {
+    border-radius: 10px !important;
+}
+
 .js-plotly-plot {
     background: transparent !important;
 }
-
 </style>
 """, unsafe_allow_html=True)
+
 # =========================================================
 # HELPERS
 # =========================================================
@@ -99,7 +199,7 @@ def load_summary(path, sep=";"):
 def safe_float(x):
     try:
         return float(x)
-    except:
+    except Exception:
         return None
 
 def status_badge(value, thresholds, reverse=False):
@@ -109,24 +209,31 @@ def status_badge(value, thresholds, reverse=False):
     reverse=True  : higher is better
     """
     if value is None:
-        return '<span class="badge-mid">Unavailable</span>'
+        return '<span class="status-badge status-mid">Unavailable</span>'
 
     good_limit, mid_limit = thresholds
 
     if not reverse:
         if value <= good_limit:
-            return '<span class="badge-good">Favorable</span>'
+            return '<span class="status-badge status-good">Favorable</span>'
         elif value <= mid_limit:
-            return '<span class="badge-mid">Watchlist</span>'
+            return '<span class="status-badge status-mid">Watchlist</span>'
         else:
-            return '<span class="badge-bad">Critical</span>'
+            return '<span class="status-badge status-bad">Critical</span>'
     else:
         if value >= good_limit:
-            return '<span class="badge-good">Favorable</span>'
+            return '<span class="status-badge status-good">Favorable</span>'
         elif value >= mid_limit:
-            return '<span class="badge-mid">Watchlist</span>'
+            return '<span class="status-badge status-mid">Watchlist</span>'
         else:
-            return '<span class="badge-bad">Critical</span>'
+            return '<span class="status-badge status-bad">Critical</span>'
+
+def format_value(value, decimals=3):
+    if value is None:
+        return "N/A"
+    if abs(value) >= 1000:
+        return f"{value:,.0f}"
+    return f"{value:.{decimals}f}"
 
 # =========================================================
 # GLOBAL PORTFOLIO UPLOAD
@@ -156,6 +263,10 @@ if uploaded_file is not None:
     except Exception as e:
         st.sidebar.error(f"Error while loading file: {e}")
 
+st.sidebar.markdown("---")
+st.sidebar.caption("Climate Risk Dashboard")
+st.sidebar.caption("Enterprise portfolio analytics")
+
 # =========================================================
 # LOAD INDICATOR SUMMARIES
 # =========================================================
@@ -170,23 +281,43 @@ gar_val = safe_float(gar.get("portfolio_indicator"))
 itr_val = safe_float(itr.get("portfolio_indicator", itr.get("portfolio_itr")))
 
 # =========================================================
-# HEADER
+# HERO HEADER
 # =========================================================
-st.markdown('<div class="big-title">Climate Risk & Portfolio Intelligence Dashboard</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="subtitle">Enterprise view of climate exposure, transition alignment and portfolio decision support.</div>',
-    unsafe_allow_html=True
-)
+st.markdown("""
+<div class="hero">
+    <div class="hero-title">Climate Risk & Portfolio Intelligence Dashboard</div>
+    <div class="hero-subtitle">
+        Enterprise platform for climate exposure analysis, transition alignment and portfolio decision support.
+    </div>
+    <span class="hero-badge">Enterprise View</span>
+    <span class="hero-badge">Finance × Climate</span>
+    <span class="hero-badge">Decision Support</span>
+</div>
+""", unsafe_allow_html=True)
 
 if "portfolio_df" in st.session_state:
-    st.info(f"Current uploaded portfolio: {st.session_state['portfolio_filename']}")
+    st.markdown(f"""
+    <div class="info-card">
+        <div class="small-label">Current uploaded portfolio</div>
+        <div style="font-size:1.05rem; font-weight:700;">
+            {st.session_state['portfolio_filename']}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 else:
-    st.warning("No uploaded portfolio. Default demo datasets will be used.")
+    st.markdown("""
+    <div class="info-card">
+        <div class="small-label">Current portfolio status</div>
+        <div style="font-size:1.05rem; font-weight:700;">
+            No uploaded portfolio — default demo datasets are currently used.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # =========================================================
 # EXECUTIVE SUMMARY
 # =========================================================
-st.markdown("## Executive Summary")
+st.markdown('<div class="section-title">Executive Summary</div>', unsafe_allow_html=True)
 
 c1, c2, c3, c4 = st.columns(4)
 
@@ -194,9 +325,8 @@ with c1:
     st.markdown(f"""
     <div class="metric-card">
         <div class="kpi-title">Physical Risk</div>
-        <div class="kpi-value">{physical_val if physical_val is not None else "N/A"}</div>
+        <div class="kpi-value">{format_value(physical_val)}</div>
         <div class="small-muted">Exposure to climate hazards such as floods and extreme events.</div>
-        <br>
         {status_badge(physical_val, (0.20, 0.50), reverse=False)}
     </div>
     """, unsafe_allow_html=True)
@@ -205,9 +335,8 @@ with c2:
     st.markdown(f"""
     <div class="metric-card">
         <div class="kpi-title">WACI</div>
-        <div class="kpi-value">{waci_val if waci_val is not None else "N/A"}</div>
+        <div class="kpi-value">{format_value(waci_val)}</div>
         <div class="small-muted">Weighted Average Carbon Intensity of the portfolio.</div>
-        <br>
         {status_badge(waci_val, (100, 300), reverse=False)}
     </div>
     """, unsafe_allow_html=True)
@@ -216,9 +345,8 @@ with c3:
     st.markdown(f"""
     <div class="metric-card">
         <div class="kpi-title">GAR</div>
-        <div class="kpi-value">{gar_val if gar_val is not None else "N/A"}</div>
+        <div class="kpi-value">{format_value(gar_val)}</div>
         <div class="small-muted">Share of assets aligned with green activities.</div>
-        <br>
         {status_badge(gar_val, (0.50, 0.25), reverse=True)}
     </div>
     """, unsafe_allow_html=True)
@@ -227,9 +355,8 @@ with c4:
     st.markdown(f"""
     <div class="metric-card">
         <div class="kpi-title">ITR</div>
-        <div class="kpi-value">{itr_val if itr_val is not None else "N/A"}</div>
+        <div class="kpi-value">{format_value(itr_val)}</div>
         <div class="small-muted">Implied temperature rise associated with the portfolio trajectory.</div>
-        <br>
         {status_badge(itr_val, (1.5, 2.0), reverse=False)}
     </div>
     """, unsafe_allow_html=True)
@@ -237,7 +364,7 @@ with c4:
 # =========================================================
 # FINANCE <-> CLIMATE LINK
 # =========================================================
-st.markdown("## Why climate matters for financial decision-making")
+st.markdown('<div class="section-title">Why climate matters for financial decision-making</div>', unsafe_allow_html=True)
 
 left, right = st.columns([1.2, 1])
 
@@ -278,7 +405,7 @@ with right:
 # =========================================================
 # INDICATOR LANDSCAPE
 # =========================================================
-st.markdown("## Indicator Landscape")
+st.markdown('<div class="section-title">Indicator Landscape</div>', unsafe_allow_html=True)
 
 i1, i2, i3, i4 = st.columns(4)
 
@@ -325,7 +452,7 @@ with i4:
 # =========================================================
 # COMPARISON SECTION
 # =========================================================
-st.markdown("## Portfolio-Level Comparison")
+st.markdown('<div class="section-title">Portfolio-Level Comparison</div>', unsafe_allow_html=True)
 
 comparison_rows = []
 
@@ -386,7 +513,7 @@ with col_chart:
 # =========================================================
 # ACTIONS / BUSINESS DECISIONS
 # =========================================================
-st.markdown("## Suggested Management Actions")
+st.markdown('<div class="section-title">Suggested Management Actions</div>', unsafe_allow_html=True)
 
 a1, a2 = st.columns(2)
 
