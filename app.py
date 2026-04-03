@@ -11,30 +11,79 @@ st.set_page_config(
 # =========================================================
 # STYLE
 # =========================================================
-st.set_page_config(
-    page_title="Climate Risk Dashboard",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
 st.markdown("""
 <style>
-body {
-    background-color: white;
-    color: black;
+
+/* === BASE THEME (compatible dark & light) === */
+
+:root {
+    --bg-color: var(--background-color);
+    --text-color: var(--text-color);
+    --card-bg: rgba(255,255,255,0.05);
+    --border-color: rgba(255,255,255,0.1);
 }
+
+/* Containers */
 [data-testid="stAppViewContainer"] {
-    background-color: white;
+    background-color: var(--bg-color);
 }
+
+/* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #f7f7f7;
+    background-color: var(--secondary-background-color);
 }
-[data-testid="stMarkdownContainer"] {
-    color: black;
+
+/* Texte */
+html, body, [class*="css"] {
+    color: var(--text-color) !important;
 }
-h1, h2, h3, h4, h5 {
-    color: black;
+
+/* === CARDS (important pour ton rendu pro) === */
+.block-container {
+    padding-top: 2rem;
 }
+
+/* KPI / sections */
+.section-card {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+/* Titles */
+h1, h2, h3 {
+    font-weight: 600;
+}
+
+/* Alerts */
+[data-testid="stAlert"] {
+    border-radius: 10px;
+}
+
+/* Tables */
+[data-testid="stDataFrame"] {
+    border-radius: 10px;
+}
+
+/* Buttons */
+button {
+    border-radius: 8px !important;
+}
+
+/* Upload box */
+[data-testid="stFileUploader"] {
+    border-radius: 10px;
+    border: 1px dashed var(--border-color);
+    padding: 10px;
+}
+
+/* Fix contrast map/plot */
+.js-plotly-plot {
+    background: transparent !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 # =========================================================
