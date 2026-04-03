@@ -11,84 +11,32 @@ st.set_page_config(
 # =========================================================
 # STYLE
 # =========================================================
+st.set_page_config(
+    page_title="Climate Risk Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    max-width: 1300px;
+body {
+    background-color: white;
+    color: black;
 }
-html, body, [class*="css"]  {
-    font-family: "Segoe UI", sans-serif;
+[data-testid="stAppViewContainer"] {
+    background-color: white;
 }
-.metric-card {
-    background-color: #f7f9fc;
-    border: 1px solid #e6ebf2;
-    padding: 18px;
-    border-radius: 14px;
-    min-height: 150px;
+[data-testid="stSidebar"] {
+    background-color: #f7f7f7;
 }
-.section-card {
-    background-color: #ffffff;
-    border: 1px solid #e6ebf2;
-    padding: 22px;
-    border-radius: 16px;
-    margin-bottom: 16px;
+[data-testid="stMarkdownContainer"] {
+    color: black;
 }
-.small-muted {
-    color: #5f6b7a;
-    font-size: 0.95rem;
-}
-.big-title {
-    font-size: 2.8rem;
-    font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 0.3rem;
-}
-.subtitle {
-    font-size: 1.15rem;
-    color: #4f5d6b;
-    margin-bottom: 1.5rem;
-}
-.kpi-title {
-    font-size: 0.95rem;
-    color: #5f6b7a;
-}
-.kpi-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1f2d3d;
-}
-.badge-good {
-    display: inline-block;
-    background: #e8f7ee;
-    color: #157347;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-.badge-mid {
-    display: inline-block;
-    background: #fff4db;
-    color: #9a6700;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-.badge-bad {
-    display: inline-block;
-    background: #fdecec;
-    color: #b42318;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 600;
+h1, h2, h3, h4, h5 {
+    color: black;
 }
 </style>
 """, unsafe_allow_html=True)
-
 # =========================================================
 # HELPERS
 # =========================================================
