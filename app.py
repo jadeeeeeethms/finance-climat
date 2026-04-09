@@ -183,16 +183,20 @@ button {
 # HELPERS
 # =========================================================
 def load_summary(path, sep=";"):
-    if os.path.exists(path):
-        try:
-            df = pd.read_csv(path, sep=sep)
-            df.columns = df.columns.astype(str).str.strip()
-            if "metric" in df.columns and "value" in df.columns:
-                df["metric"] = df["metric"].astype(str).str.strip()
-                return dict(zip(df["metric"], df["value"]))
-        except Exception:
+    if not os.path.exists(path):
+        return {}
+
+    try:
+        df = pd.read_csv(path, sep=sep)
+        df.columns = df.columns.astype(str).str.strip()
+
+        if "metric" not in df.columns or "value" not in df.columns:
             return {}
-    return {}
+
+        df["metric"] = df["metric"].astype(str).str.strip()
+        return dict(zip(df["metric"], df["value"]))
+    except Exception:
+        return {}
 
 def safe_float(x):
     try:
@@ -217,37 +221,49 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     rename_map = {
-        "EU Taxonomy alignment (%)": "EU Taxonomy alignment",
-        "EU taxonomy alignment": "EU Taxonomy alignment",
-        "Taxonomy eligibility": "Taxonomy Eligibility",
-        "Portfolio Weight %": "Portfolio Weight (%)",
-        "Portfolio weight (%)": "Portfolio Weight (%)",
         "Company Name": "Company name",
         "Nace Code": "NACE Code",
+        "Portfolio Weight %": "Portfolio Weight (%)",
+        "Portfolio weight (%)": "Portfolio Weight (%)",
+        "Taxonomy eligibility": "Taxonomy Eligibility",
+        "EU Taxonomy alignment (%)": "EU Taxonomy alignment",
+        "EU taxonomy alignment": "EU Taxonomy alignment",
+        "ITR": "itr",
+        "Itr": "itr",
     }
 
     df.rename(columns=rename_map, inplace=True)
     return df
 
+def clean_numeric_series(series: pd.Series) -> pd.Series:
+    s = series.astype(str).str.strip()
+
+    s = s.str.replace(" ", "", regex=False)
+    s = s.str.replace("%", "", regex=False)
+    s = s.str.replace(",", ".", regex=False)
+
+    s = s.replace(["", "nan", "None", "NA", "N/A", "null"], pd.NA)
+
+    return pd.to_numeric(s, errors="coerce")
+
 def compute_gar_from_portfolio(df: pd.DataFrame):
     try:
         df = normalize_columns(df)
 
-        required_cols = [
-            "NACE Code",
-            "Portfolio Weight (%)",
-            "EU Taxonomy alignment"
-        ]
+        required_cols = ["Portfolio Weight (%)", "EU Taxonomy alignment"]
         if not all(col in df.columns for col in required_cols):
             return None
 
         df = df.copy()
-        df["NACE Code"] = df["NACE Code"].astype(str).str.strip()
-        df["Portfolio Weight (%)"] = pd.to_numeric(df["Portfolio Weight (%)"], errors="coerce")
-        df["EU Taxonomy alignment"] = pd.to_numeric(df["EU Taxonomy alignment"], errors="coerce").fillna(0)
+
+        if "NACE Code" in df.columns:
+            df["NACE Code"] = df["NACE Code"].astype(str).str.strip()
+            df = df[~df["NACE Code"].str.upper().str.startswith("K")]
+
+        df["Portfolio Weight (%)"] = clean_numeric_series(df["Portfolio Weight (%)"])
+        df["EU Taxonomy alignment"] = clean_numeric_series(df["EU Taxonomy alignment"]).fillna(0)
 
         df = df.dropna(subset=["Portfolio Weight (%)"])
-        df = df[~df["NACE Code"].str.upper().str.startswith("K")]
 
         if df.empty:
             return None
@@ -257,9 +273,40 @@ def compute_gar_from_portfolio(df: pd.DataFrame):
             return None
 
         df["Normalized_Weight"] = df["Portfolio Weight (%)"] / total_weight
-        gar_value = (df["Normalized_Weight"] * (df["EU Taxonomy alignment"] / 100.0)).sum()
+
+        gar_value = (
+            df["Normalized_Weight"] * (df["EU Taxonomy alignment"] / 100.0)
+        ).sum()
 
         return float(gar_value)
+    except Exception:
+        return None
+
+def compute_itr_from_portfolio(df: pd.DataFrame):
+    try:
+        df = normalize_columns(df)
+
+        required_cols = ["Portfolio Weight (%)", "itr"]
+        if not all(col in df.columns for col in required_cols):
+            return None
+
+        df = df.copy()
+        df["Portfolio Weight (%)"] = clean_numeric_series(df["Portfolio Weight (%)"])
+        df["itr"] = clean_numeric_series(df["itr"])
+
+        df = df.dropna(subset=["Portfolio Weight (%)", "itr"])
+
+        if df.empty:
+            return None
+
+        total_weight = df["Portfolio Weight (%)"].sum()
+        if total_weight <= 0:
+            return None
+
+        df["Normalized_Weight"] = df["Portfolio Weight (%)"] / total_weight
+        itr_value = (df["Normalized_Weight"] * df["itr"]).sum()
+
+        return float(itr_value)
     except Exception:
         return None
 
@@ -327,10 +374,10 @@ st.sidebar.caption("Climate Risk Dashboard")
 st.sidebar.caption("Enterprise portfolio analytics")
 
 # =========================================================
-# LOAD INDICATOR SUMMARIES
+# LOAD DEMO INDICATOR SUMMARIES
 # =========================================================
-waci_summary = load_summary("data/waci/dashboard_summary.csv")
 physical_summary = load_summary("data/physical_risk/dashboard_summary.csv")
+waci_summary = load_summary("data/waci/dashboard_summary.csv")
 gar_summary = load_summary("data/gar/dashboard_summary.csv")
 itr_summary = load_summary("data/itr/dashboard_summary.csv")
 
@@ -354,11 +401,19 @@ itr_val = get_first_available_metric(
     ["portfolio_indicator", "portfolio_itr", "itr_portfolio", "itr", "indicator"]
 )
 
-# If a portfolio is uploaded, overwrite GAR with actual computed GAR
+# =========================================================
+# OVERRIDE WITH UPLOADED PORTFOLIO WHEN POSSIBLE
+# =========================================================
 if "portfolio_df" in st.session_state:
-    uploaded_gar = compute_gar_from_portfolio(st.session_state["portfolio_df"])
+    uploaded_df = st.session_state["portfolio_df"]
+
+    uploaded_gar = compute_gar_from_portfolio(uploaded_df)
     if uploaded_gar is not None:
         gar_val = uploaded_gar
+
+    uploaded_itr = compute_itr_from_portfolio(uploaded_df)
+    if uploaded_itr is not None:
+        itr_val = uploaded_itr
 
 # =========================================================
 # HERO HEADER
@@ -622,6 +677,25 @@ with a2:
     </ol>
     </div>
     """, unsafe_allow_html=True)
+
+# =========================================================
+# OPTIONAL DEBUG
+# =========================================================
+with st.expander("Debug uploaded portfolio values"):
+    if "portfolio_df" in st.session_state:
+        df_debug = normalize_columns(st.session_state["portfolio_df"])
+        st.write("Detected columns:", list(df_debug.columns))
+
+        if "Portfolio Weight (%)" in df_debug.columns:
+            st.write("Portfolio Weight (%) sample:", df_debug["Portfolio Weight (%)"].head(10).tolist())
+
+        if "EU Taxonomy alignment" in df_debug.columns:
+            st.write("EU Taxonomy alignment sample:", df_debug["EU Taxonomy alignment"].head(10).tolist())
+
+        if "itr" in df_debug.columns:
+            st.write("itr sample:", df_debug["itr"].head(10).tolist())
+    else:
+        st.write("No uploaded portfolio.")
 
 # =========================================================
 # FOOTER NOTE
