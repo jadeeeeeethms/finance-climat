@@ -45,32 +45,19 @@ def build_waci_from_uploaded_portfolio(df):
     if total_value <= 0:
         return None, "Uploaded portfolio has zero total exposure_value."
 
-    data["intensity"] = data.apply(
-        lambda row: row["emissions"] / (row["revenue"] / 1_000_000) if row["revenue"] > 0 else 0,
-        axis=1
-    )
+    data["intensity"] = data.apply( lambda row: row["emissions"] / (row["revenue"] / 1_000_000) if row["revenue"] > 0 else 0,
+        axis=1 )
     data["weight"] = data["exposure_value"] / total_value
     data["contribution"] = data["weight"] * data["intensity"]
 
     portfolio_indicator = data["contribution"].sum()
     total_emissions = data["emissions"].sum()
 
-    country = (
-        data.groupby("country", as_index=False)["contribution"]
-        .sum()
-        .rename(columns={"contribution": "indicator"})
-    )
+    country = (data.groupby("country", as_index=False)["contribution"].sum().rename(columns={"contribution": "indicator"}))
 
-    sector = (
-        data.groupby("sector", as_index=False)["contribution"]
-        .sum()
-        .rename(columns={"contribution": "indicator"})
-    )
+    sector = (data.groupby("sector", as_index=False)["contribution"].sum().rename(columns={"contribution": "indicator"}))
 
-    summary_raw = pd.DataFrame({
-        "metric": ["total_value", "total_emissions", "portfolio_indicator"],
-        "value": [total_value, total_emissions, portfolio_indicator]
-    })
+    summary_raw = pd.DataFrame({ "metric": ["total_value", "total_emissions", "portfolio_indicator"], "value": [total_value, total_emissions, portfolio_indicator] })
 
     data = data.rename(columns={"counterparty": "name"})
 
@@ -123,8 +110,7 @@ def show_waci_dashboard():
             hover_name="name",
             hover_data=[c for c in ["country", "exposure_value"] if c in assets.columns],
             zoom=2,
-            height=600
-        )
+            height=600 )
         fig_map.update_layout(mapbox_style="carto-positron")
         st.plotly_chart(fig_map, use_container_width=True)
     else:
@@ -135,8 +121,7 @@ def show_waci_dashboard():
         fig_country = px.bar(
             country.sort_values("indicator", ascending=False).head(20),
             x="country",
-            y="indicator"
-        )
+            y="indicator")
         st.plotly_chart(fig_country, use_container_width=True)
 
     st.subheader("WACI by Sector")
@@ -144,8 +129,7 @@ def show_waci_dashboard():
         fig_sector = px.bar(
             sector.sort_values("indicator", ascending=False),
             x="sector",
-            y="indicator"
-        )
+            y="indicator"  )
         st.plotly_chart(fig_sector, use_container_width=True)
 
     st.subheader("Assets Data")
