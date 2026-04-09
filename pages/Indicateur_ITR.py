@@ -18,10 +18,7 @@ def build_itr_from_uploaded_portfolio(df):
     missing = [c for c in required_cols if c not in data.columns]
 
     if missing:
-        return None, (
-            "Uploaded portfolio is not ITR-ready. Missing columns: "
-            f"{missing}. Default ITR demo data will be used instead."
-        )
+        return None, ( "Uploaded portfolio is not ITR-ready. Missing columns: " f"{missing}. Default ITR demo data will be used instead.")
 
     if "exposure" not in data.columns and "value" in data.columns:
         data["exposure"] = data["value"]
@@ -48,23 +45,11 @@ def build_itr_from_uploaded_portfolio(df):
     baseline_temp = 1.5
     weighted_dqs = (data["dqs"] * data["weight"]).sum() if "weight" in data.columns else data["dqs"].mean()
 
-    sector = (
-        data.groupby("sector", as_index=False)
-        .apply(lambda x: pd.Series({"itr": (x["itr"] * x["weight"]).sum() if "weight" in x.columns else x["itr"].mean()}))
-        .reset_index(drop=True)
-    )
+    sector = (data.groupby("sector", as_index=False).apply(lambda x: pd.Series({"itr": (x["itr"] * x["weight"]).sum() if "weight" in x.columns else x["itr"].mean()})).reset_index(drop=True) )
 
-    asset_class = (
-        data.groupby("asset_class", as_index=False)
-        .apply(lambda x: pd.Series({"itr": (x["itr"] * x["weight"]).sum() if "weight" in x.columns else x["itr"].mean()}))
-        .reset_index(drop=True)
-    )
+    asset_class = ( data.groupby("asset_class", as_index=False) .apply(lambda x: pd.Series({"itr": (x["itr"] * x["weight"]).sum() if "weight" in x.columns else x["itr"].mean()})) .reset_index(drop=True))
 
-    coverage = (
-        data.groupby("source", as_index=False)
-        .size()
-        .rename(columns={"size": "count"})
-    )
+    coverage = (data.groupby("source", as_index=False).size().rename(columns={"size": "count"}) )
     total_count = coverage["count"].sum()
     coverage["percentage"] = 100 * coverage["count"] / total_count if total_count > 0 else 0
 
@@ -89,13 +74,13 @@ if portfolio_df is not None:
         st.warning(warning_msg)
         data = load_and_process_itr_data()
         if not data["success"]:
-            st.warning(f"⚠️ Erreur : {data['error']}")
+            st.warning(f"Erreur : {data['error']}")
             st.stop()
         st.info("Fallback to default ITR demo data.")
 else:
     data = load_and_process_itr_data()
     if not data["success"]:
-        st.warning(f"⚠️ Erreur : {data['error']}")
+        st.warning(f" Erreur : {data['error']}")
         st.stop()
 
 assets = data["assets"]
@@ -141,26 +126,22 @@ col_chart1, col_chart2 = st.columns(2)
 with col_chart1:
     st.subheader("ITR by Asset Class")
     if {"asset_class", "itr"}.issubset(asset_class.columns):
-        fig_ac = px.bar(
-            asset_class.sort_values("itr", ascending=False),
+        fig_ac = px.bar(asset_class.sort_values("itr", ascending=False),
             x="asset_class",
             y="itr",
             color="itr",
-            color_continuous_scale="Reds"
-        )
+            color_continuous_scale="Reds" )
         st.plotly_chart(fig_ac, use_container_width=True)
 
 with col_chart2:
     st.subheader("Top 10 Sectors Contributing to ITR")
     if {"sector", "itr"}.issubset(sector.columns):
         top_sectors = sector.sort_values("itr", ascending=False).head(10)
-        fig_sector = px.bar(
-            top_sectors,
+        fig_sector = px.bar(top_sectors,
             x="sector",
             y="itr",
             color="itr",
-            color_continuous_scale="Reds"
-        )
+            color_continuous_scale="Reds" )
         st.plotly_chart(fig_sector, use_container_width=True)
 
 st.header("ITR Distribution & Data Quality")
@@ -174,34 +155,27 @@ with col_dist:
             assets,
             x="itr",
             nbins=30,
-            color_discrete_sequence=["#EF553B"]
-        )
+            color_discrete_sequence=["#EF553B"])
         fig_hist.add_vline(
             x=baseline_temp,
             line_dash="dash",
             line_color="green",
-            annotation_text="Scenario Baseline"
-        )
+            annotation_text="Scenario Baseline")
         st.plotly_chart(fig_hist, use_container_width=True)
 
 with col_cov:
     st.subheader("Coverage Metrics (Reduction Rate Source)")
     if {"percentage", "source"}.issubset(coverage.columns):
-        fig_cov = px.pie(
-            coverage,
-            values="percentage",
+        fig_cov = px.pie(coverage,values="percentage",
             names="source",
-            hole=0.4
-        )
+            hole=0.4 )
         st.plotly_chart(fig_cov, use_container_width=True)
 
 st.header("Counterparty-level Drill-down Data")
 
-display_columns = [
-    "counterparty_id", "sector", "asset_class", "exposure", "weight",
+display_columns = ["counterparty_id", "sector", "asset_class", "exposure", "weight",
     "current_intensity", "reduction_rate", "source",
-    "itr", "dqs", "outlier_flag"
-]
+    "itr", "dqs", "outlier_flag"]
 
 existing_cols = [col for col in display_columns if col in assets.columns]
 
