@@ -2,15 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(
-    page_title="Climate Risk Dashboard",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config( page_title="Climate Risk Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# =========================================================
-# STYLE
-# =========================================================
 st.markdown("""
 <style>
 :root {
@@ -29,27 +22,20 @@ st.markdown("""
     --bad-color: #b91c1c;
 }
 
-.block-container {
-    padding-top: 1.2rem;
+.block-container {padding-top: 1.2rem;
     padding-bottom: 2rem;
-    max-width: 1280px;
-}
+    max-width: 1280px;}
 
-[data-testid="stSidebar"] {
-    border-right: 1px solid var(--border-color);
-}
+[data-testid="stSidebar"] {border-right: 1px solid var(--border-color);}
 
-html, body, [class*="css"] {
-    font-family: "Segoe UI", sans-serif;
-}
+html, body, [class*="css"] {font-family: "Segoe UI", sans-serif;}
 
 .hero {
     padding: 30px 34px;
     border-radius: 22px;
     margin-bottom: 22px;
     background: linear-gradient(135deg, var(--hero-bg-1), var(--hero-bg-2));
-    border: 1px solid var(--border-color);
-}
+    border: 1px solid var(--border-color);}
 
 .hero-title {
     font-size: 3rem;
@@ -179,9 +165,6 @@ button {
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# HELPERS
-# =========================================================
 def load_summary(path, sep=";"):
     if os.path.exists(path):
         try:
@@ -213,18 +196,15 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = (
         df.columns.astype(str)
         .str.strip()
-        .str.replace(r"\s+", " ", regex=True)
-    )
+        .str.replace(r"\s+", " ", regex=True)  )
 
-    rename_map = {
-        "EU Taxonomy alignment (%)": "EU Taxonomy alignment",
+    rename_map = {"EU Taxonomy alignment (%)": "EU Taxonomy alignment",
         "EU taxonomy alignment": "EU Taxonomy alignment",
         "Taxonomy eligibility": "Taxonomy Eligibility",
         "Portfolio Weight %": "Portfolio Weight (%)",
         "Portfolio weight (%)": "Portfolio Weight (%)",
         "Company Name": "Company name",
-        "Nace Code": "NACE Code",
-    }
+        "Nace Code": "NACE Code", }
 
     df.rename(columns=rename_map, inplace=True)
     return df
@@ -236,8 +216,7 @@ def compute_gar_from_portfolio(df: pd.DataFrame):
         required_cols = [
             "NACE Code",
             "Portfolio Weight (%)",
-            "EU Taxonomy alignment"
-        ]
+            "EU Taxonomy alignment" ]
         if not all(col in df.columns for col in required_cols):
             return None
 
@@ -291,15 +270,10 @@ def format_value(value, decimals=3):
         return f"{value:,.0f}"
     return f"{value:.{decimals}f}"
 
-# =========================================================
-# GLOBAL PORTFOLIO UPLOAD
-# =========================================================
 st.sidebar.markdown("## Data Ingestion")
 
-uploaded_file = st.sidebar.file_uploader(
-    "Upload Portfolio Data (CSV/XLSX)",
-    type=["csv", "xlsx"]
-)
+uploaded_file = st.sidebar.file_uploader("Upload Portfolio Data (CSV/XLSX)",
+    type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
@@ -326,43 +300,29 @@ st.sidebar.markdown("---")
 st.sidebar.caption("Climate Risk Dashboard")
 st.sidebar.caption("Enterprise portfolio analytics")
 
-# =========================================================
-# LOAD INDICATOR SUMMARIES
-# =========================================================
 waci_summary = load_summary("data/waci/dashboard_summary.csv")
 physical_summary = load_summary("data/physical_risk/dashboard_summary.csv")
 gar_summary = load_summary("data/gar/dashboard_summary.csv")
 itr_summary = load_summary("data/itr/dashboard_summary.csv")
 
-physical_val = get_first_available_metric(
-    physical_summary,
-    ["portfolio_indicator", "physical_risk_portfolio", "portfolio_physical_risk", "indicator"]
-)
+physical_val = get_first_available_metric( physical_summary,
+    ["portfolio_indicator", "physical_risk_portfolio", "portfolio_physical_risk", "indicator"])
 
 waci_val = get_first_available_metric(
     waci_summary,
-    ["portfolio_indicator", "portfolio_waci", "waci_portfolio", "indicator"]
-)
+    ["portfolio_indicator", "portfolio_waci", "waci_portfolio", "indicator"])
 
-gar_val = get_first_available_metric(
-    gar_summary,
-    ["portfolio_indicator", "portfolio_gar", "gar_portfolio", "gar_ratio", "indicator"]
-)
+gar_val = get_first_available_metric(gar_summary,["portfolio_indicator", "portfolio_gar", "gar_portfolio", "gar_ratio", "indicator"])
 
 itr_val = get_first_available_metric(
     itr_summary,
-    ["portfolio_indicator", "portfolio_itr", "itr_portfolio", "itr", "indicator"]
-)
+    ["portfolio_indicator", "portfolio_itr", "itr_portfolio", "itr", "indicator"])
 
-# If a portfolio is uploaded, overwrite GAR with actual computed GAR
+#If a portfolio is uploaded, overwrite GAR with actual computed GAR
 if "portfolio_df" in st.session_state:
     uploaded_gar = compute_gar_from_portfolio(st.session_state["portfolio_df"])
     if uploaded_gar is not None:
         gar_val = uploaded_gar
-
-# =========================================================
-# HERO HEADER
-# =========================================================
 st.markdown("""
 <div class="hero">
     <div class="hero-title">Climate Risk & Portfolio Intelligence Dashboard</div>
@@ -394,9 +354,6 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# =========================================================
-# EXECUTIVE SUMMARY
-# =========================================================
 st.markdown('<div class="section-title">Executive Summary</div>', unsafe_allow_html=True)
 
 c1, c2, c3, c4 = st.columns(4)
@@ -441,9 +398,6 @@ with c4:
     </div>
     """, unsafe_allow_html=True)
 
-# =========================================================
-# FINANCE <-> CLIMATE LINK
-# =========================================================
 st.markdown('<div class="section-title">Why climate matters for financial decision-making</div>', unsafe_allow_html=True)
 
 left, right = st.columns([1.2, 1])
@@ -481,10 +435,6 @@ with right:
     </p>
     </div>
     """, unsafe_allow_html=True)
-
-# =========================================================
-# INDICATOR LANDSCAPE
-# =========================================================
 st.markdown('<div class="section-title">Indicator Landscape</div>', unsafe_allow_html=True)
 
 i1, i2, i3, i4 = st.columns(4)
@@ -529,9 +479,6 @@ with i4:
     </div>
     """, unsafe_allow_html=True)
 
-# =========================================================
-# COMPARISON SECTION
-# =========================================================
 st.markdown('<div class="section-title">Portfolio-Level Comparison</div>', unsafe_allow_html=True)
 
 comparison_rows = []
@@ -590,9 +537,6 @@ with col_chart:
         st.info("Comparison chart unavailable.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# =========================================================
-# ACTIONS / BUSINESS DECISIONS
-# =========================================================
 st.markdown('<div class="section-title">Suggested Management Actions</div>', unsafe_allow_html=True)
 
 a1, a2 = st.columns(2)
@@ -623,8 +567,5 @@ with a2:
     </div>
     """, unsafe_allow_html=True)
 
-# =========================================================
-# FOOTER NOTE
-# =========================================================
 st.markdown("---")
 st.caption("This dashboard is designed as a portfolio decision-support tool linking climate analytics with financial interpretation.")
