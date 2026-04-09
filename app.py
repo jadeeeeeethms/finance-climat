@@ -13,7 +13,6 @@ st.set_page_config(
 # =========================================================
 st.markdown("""
 <style>
-/* ===== Adaptive design tokens ===== */
 :root {
     --card-bg: rgba(127, 127, 127, 0.08);
     --border-color: rgba(127, 127, 127, 0.18);
@@ -30,7 +29,6 @@ st.markdown("""
     --bad-color: #b91c1c;
 }
 
-/* ===== Layout ===== */
 .block-container {
     padding-top: 1.2rem;
     padding-bottom: 2rem;
@@ -45,7 +43,6 @@ html, body, [class*="css"] {
     font-family: "Segoe UI", sans-serif;
 }
 
-/* ===== Hero ===== */
 .hero {
     padding: 30px 34px;
     border-radius: 22px;
@@ -79,7 +76,6 @@ html, body, [class*="css"] {
     margin-top: 4px;
 }
 
-/* ===== Cards ===== */
 .info-card {
     padding: 18px 20px;
     border-radius: 16px;
@@ -105,7 +101,6 @@ html, body, [class*="css"] {
     height: 100%;
 }
 
-/* ===== Typography ===== */
 .section-title {
     font-size: 2rem;
     font-weight: 780;
@@ -137,7 +132,6 @@ html, body, [class*="css"] {
     opacity: 0.82;
 }
 
-/* ===== Status badges ===== */
 .status-badge {
     display: inline-block;
     padding: 0.35rem 0.72rem;
@@ -162,7 +156,6 @@ html, body, [class*="css"] {
     color: var(--bad-color);
 }
 
-/* ===== Components ===== */
 [data-testid="stAlert"] {
     border-radius: 12px;
 }
@@ -191,9 +184,14 @@ button {
 # =========================================================
 def load_summary(path, sep=";"):
     if os.path.exists(path):
-        df = pd.read_csv(path, sep=sep)
-        if "metric" in df.columns and "value" in df.columns:
-            return dict(zip(df["metric"], df["value"]))
+        try:
+            df = pd.read_csv(path, sep=sep)
+            df.columns = df.columns.astype(str).str.strip()
+            if "metric" in df.columns and "value" in df.columns:
+                df["metric"] = df["metric"].astype(str).str.strip()
+                return dict(zip(df["metric"], df["value"]))
+        except Exception:
+            return {}
     return {}
 
 def safe_float(x):
@@ -202,12 +200,70 @@ def safe_float(x):
     except Exception:
         return None
 
+def get_first_available_metric(summary_dict, possible_keys):
+    for key in possible_keys:
+        if key in summary_dict:
+            value = safe_float(summary_dict.get(key))
+            if value is not None:
+                return value
+    return None
+
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = (
+        df.columns.astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+    )
+
+    rename_map = {
+        "EU Taxonomy alignment (%)": "EU Taxonomy alignment",
+        "EU taxonomy alignment": "EU Taxonomy alignment",
+        "Taxonomy eligibility": "Taxonomy Eligibility",
+        "Portfolio Weight %": "Portfolio Weight (%)",
+        "Portfolio weight (%)": "Portfolio Weight (%)",
+        "Company Name": "Company name",
+        "Nace Code": "NACE Code",
+    }
+
+    df.rename(columns=rename_map, inplace=True)
+    return df
+
+def compute_gar_from_portfolio(df: pd.DataFrame):
+    try:
+        df = normalize_columns(df)
+
+        required_cols = [
+            "NACE Code",
+            "Portfolio Weight (%)",
+            "EU Taxonomy alignment"
+        ]
+        if not all(col in df.columns for col in required_cols):
+            return None
+
+        df = df.copy()
+        df["NACE Code"] = df["NACE Code"].astype(str).str.strip()
+        df["Portfolio Weight (%)"] = pd.to_numeric(df["Portfolio Weight (%)"], errors="coerce")
+        df["EU Taxonomy alignment"] = pd.to_numeric(df["EU Taxonomy alignment"], errors="coerce").fillna(0)
+
+        df = df.dropna(subset=["Portfolio Weight (%)"])
+        df = df[~df["NACE Code"].str.upper().str.startswith("K")]
+
+        if df.empty:
+            return None
+
+        total_weight = df["Portfolio Weight (%)"].sum()
+        if total_weight <= 0:
+            return None
+
+        df["Normalized_Weight"] = df["Portfolio Weight (%)"] / total_weight
+        gar_value = (df["Normalized_Weight"] * (df["EU Taxonomy alignment"] / 100.0)).sum()
+
+        return float(gar_value)
+    except Exception:
+        return None
+
 def status_badge(value, thresholds, reverse=False):
-    """
-    thresholds = (good_limit, mid_limit)
-    reverse=False : lower is better
-    reverse=True  : higher is better
-    """
     if value is None:
         return '<span class="status-badge status-mid">Unavailable</span>'
 
@@ -250,6 +306,9 @@ if uploaded_file is not None:
         if uploaded_file.name.endswith(".csv"):
             try:
                 portfolio_df = pd.read_csv(uploaded_file, sep=";")
+                if len(portfolio_df.columns) == 1:
+                    uploaded_file.seek(0)
+                    portfolio_df = pd.read_csv(uploaded_file)
             except Exception:
                 uploaded_file.seek(0)
                 portfolio_df = pd.read_csv(uploaded_file)
@@ -270,15 +329,36 @@ st.sidebar.caption("Enterprise portfolio analytics")
 # =========================================================
 # LOAD INDICATOR SUMMARIES
 # =========================================================
-waci = load_summary("data/waci/dashboard_summary.csv")
-physical = load_summary("data/physical_risk/dashboard_summary.csv")
-gar = load_summary("data/gar/dashboard_summary.csv")
-itr = load_summary("data/itr/dashboard_summary.csv")
+waci_summary = load_summary("data/waci/dashboard_summary.csv")
+physical_summary = load_summary("data/physical_risk/dashboard_summary.csv")
+gar_summary = load_summary("data/gar/dashboard_summary.csv")
+itr_summary = load_summary("data/itr/dashboard_summary.csv")
 
-waci_val = safe_float(waci.get("portfolio_indicator"))
-physical_val = safe_float(physical.get("portfolio_indicator"))
-gar_val = safe_float(gar.get("portfolio_indicator"))
-itr_val = safe_float(itr.get("portfolio_indicator", itr.get("portfolio_itr")))
+physical_val = get_first_available_metric(
+    physical_summary,
+    ["portfolio_indicator", "physical_risk_portfolio", "portfolio_physical_risk", "indicator"]
+)
+
+waci_val = get_first_available_metric(
+    waci_summary,
+    ["portfolio_indicator", "portfolio_waci", "waci_portfolio", "indicator"]
+)
+
+gar_val = get_first_available_metric(
+    gar_summary,
+    ["portfolio_indicator", "portfolio_gar", "gar_portfolio", "gar_ratio", "indicator"]
+)
+
+itr_val = get_first_available_metric(
+    itr_summary,
+    ["portfolio_indicator", "portfolio_itr", "itr_portfolio", "itr", "indicator"]
+)
+
+# If a portfolio is uploaded, overwrite GAR with actual computed GAR
+if "portfolio_df" in st.session_state:
+    uploaded_gar = compute_gar_from_portfolio(st.session_state["portfolio_df"])
+    if uploaded_gar is not None:
+        gar_val = uploaded_gar
 
 # =========================================================
 # HERO HEADER
