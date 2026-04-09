@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-Physical Risk dashboard page
-"""
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Physical Risk", layout="wide")
 
-# =========================
-# HELPERS
-# =========================
 def safe_float(x, default=0.0):
     try:
         return float(x)
@@ -29,7 +22,7 @@ def load_default_data():
 def build_from_uploaded_portfolio(df):
     data = df.copy()
 
-    # harmonisation minimale
+    #harmonisation minimale
     rename_map = {}
     if "exposure_value" in data.columns and "value" not in data.columns:
         rename_map["exposure_value"] = "value"
@@ -46,17 +39,14 @@ def build_from_uploaded_portfolio(df):
 
     data["value"] = pd.to_numeric(data["value"], errors="coerce").fillna(0)
 
-    # si hazard existe on calcule physical_risk
+    #si hazard existe on calcule physical_risk
     if "hazard" in data.columns and "physical_risk" not in data.columns:
         data["hazard"] = pd.to_numeric(data["hazard"], errors="coerce").fillna(0)
         data["physical_risk"] = data["hazard"] * data["value"]
 
-    # si physical_risk n'existe pas, on ne peut pas faire un vrai calcul
+    #si physical_risk n'existe pas, on ne peut pas faire un vrai calcul
     if "physical_risk" not in data.columns:
-        return None, (
-            "Uploaded portfolio has no 'physical_risk' column and no 'hazard' column. "
-            "Default demo dataset will be used instead."
-        )
+        return None, ( "Uploaded portfolio has no 'physical_risk' column and no 'hazard' column. " "Default demo dataset will be used instead." )
 
     data["physical_risk"] = pd.to_numeric(data["physical_risk"], errors="coerce").fillna(0)
     data["risk_ratio"] = data["physical_risk"] / data["value"].replace(0, pd.NA)
@@ -65,17 +55,12 @@ def build_from_uploaded_portfolio(df):
     total_risk = data["physical_risk"].sum()
     portfolio_indicator = total_risk / total_value if total_value > 0 else 0.0
 
-    country = (
-        data.groupby("country", as_index=False)
-        .agg(total_value=("value", "sum"), total_risk=("physical_risk", "sum"))
-    )
+    country = (data.groupby("country", as_index=False)
+        .agg(total_value=("value", "sum"), total_risk=("physical_risk", "sum")))
     country["indicator"] = country["total_risk"] / country["total_value"].replace(0, pd.NA)
     country = country[["country", "indicator"]].fillna(0)
 
-    sector = (
-        data.groupby("sector", as_index=False)
-        .agg(total_value=("value", "sum"), total_risk=("physical_risk", "sum"))
-    )
+    sector = (data.groupby("sector", as_index=False).agg(total_value=("value", "sum"), total_risk=("physical_risk", "sum")))
     sector["indicator"] = sector["total_risk"] / sector["total_value"].replace(0, pd.NA)
     sector = sector[["sector", "indicator"]].fillna(0)
 
@@ -124,10 +109,6 @@ def build_from_uploaded_portfolio(df):
     })
 
     return (data, country, sector, summary_raw, interpretation), None
-
-# =========================
-# LOAD DATA
-# =========================
 portfolio_df = st.session_state.get("portfolio_df", None)
 
 if portfolio_df is not None:
@@ -149,9 +130,6 @@ total_value = safe_float(summary.get("total_value"))
 total_risk = safe_float(summary.get("total_risk"))
 portfolio_indicator = safe_float(summary.get("portfolio_indicator"))
 
-# =========================
-# TITLE
-# =========================
 st.title("Climate Physical Risk Dashboard")
 st.caption("Flood exposure indicator for portfolio assets")
 
@@ -163,9 +141,6 @@ This page helps a non-expert user understand where physical climate risk is low 
 - **Higher indicator values = higher physical risk**
 """)
 
-# =========================
-# SUMMARY
-# =========================
 st.header("1. Portfolio Summary")
 
 col1, col2, col3 = st.columns(3)
@@ -173,9 +148,6 @@ col1.metric("Total Value", f"{total_value:,.0f}")
 col2.metric("Total Risk", f"{total_risk:,.0f}")
 col3.metric("Portfolio Indicator", f"{portfolio_indicator:.3f}")
 
-# =========================
-# INTERPRETATION
-# =========================
 st.header("2. How to Interpret This Indicator")
 st.info(summary.get("interpretation", "Lower values are better."))
 st.success(summary.get("investment_rule", "Prefer the lowest values."))
@@ -188,9 +160,6 @@ with col2:
     st.markdown("### What a low value means")
     st.write(interp.get("meaning_of_low_value", "A low value means lower exposure."))
 
-# =========================
-# QUICK DECISION
-# =========================
 st.header("3. Quick Decision Support")
 
 best_country = summary.get("best_country_to_prioritize", "N/A")
@@ -212,9 +181,6 @@ with col2:
     st.write(f"**Sector:** {worst_sector}")
     st.write(f"**Asset:** {worst_asset}")
 
-# =========================
-# MAP
-# =========================
 st.header("4. Assets Map")
 
 if {"latitude", "longitude", "name"}.issubset(assets.columns):
@@ -236,9 +202,6 @@ if {"latitude", "longitude", "name"}.issubset(assets.columns):
 else:
     st.warning("The assets file must contain at least: latitude, longitude, name")
 
-# =========================
-# COUNTRY / SECTOR
-# =========================
 st.header("5. Risk by Country")
 if {"country", "indicator"}.issubset(country.columns):
     fig_country = px.bar(
@@ -255,9 +218,6 @@ if {"sector", "indicator"}.issubset(sector.columns):
     )
     st.plotly_chart(fig_sector, use_container_width=True)
 
-# =========================
-# TABLE
-# =========================
 st.header("7. Detailed Asset View")
 
 show_cols = [c for c in [
@@ -266,7 +226,4 @@ show_cols = [c for c in [
 
 if show_cols:
     sort_col = "physical_risk" if "physical_risk" in assets.columns else show_cols[0]
-    st.dataframe(
-        assets[show_cols].sort_values(sort_col, ascending=False),
-        use_container_width=True
-    )
+    st.dataframe(assets[show_cols].sort_values(sort_col, ascending=False), use_container_width=True)
